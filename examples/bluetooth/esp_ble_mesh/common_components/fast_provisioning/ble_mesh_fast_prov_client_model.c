@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include "esp_ble_mesh_defs.h"
+#include "esp_ble_mesh_networking_api.h"
 #include "esp_ble_mesh_local_data_operation_api.h"
 
 #include "ble_mesh_fast_prov_operation.h"
@@ -400,6 +401,23 @@ esp_err_t example_fast_prov_client_recv_status(esp_ble_mesh_model_t *model,
             return ESP_FAIL;
         }
 #endif /* CONFIG_BLE_MESH_GENERIC_ONOFF_CLI */
+        break;
+    }
+    case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_INFO_STATUS: {
+        uint16_t elem_num = (*(data + 1) << 1) | *(data);
+        const uint8_t *uuid = data + 2;
+        const uint8_t *dev_key = data + 18;
+        esp_err_t err;
+
+        ESP_LOGI(TAG, "Get FP node 0x%04x information, elem_num %d", ctx->addr, elem_num);
+        ESP_LOG_BUFFER_HEX("Device UUID", uuid, 16);
+        ESP_LOG_BUFFER_HEX("Device Key", dev_key, 16);
+
+        err = esp_ble_mesh_provisioner_store_fast_prov_node_info(ctx->addr, elem_num, uuid, dev_key);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to store FP node information");
+            return ESP_FAIL;
+        }
         break;
     }
     default:

@@ -118,7 +118,9 @@ static void example_free_set_info(example_fast_prov_server_t *srv)
 }
 
 esp_err_t example_fast_prov_server_recv_msg(esp_ble_mesh_model_t *model,
-        esp_ble_mesh_msg_ctx_t *ctx, struct net_buf_simple *buf)
+                                            esp_ble_mesh_msg_ctx_t *ctx,
+                                            struct net_buf_simple *buf,
+                                            void *user_data)
 {
     example_fast_prov_server_t *srv = NULL;
     struct net_buf_simple *msg = NULL;
@@ -408,6 +410,26 @@ esp_err_t example_fast_prov_server_recv_msg(esp_ble_mesh_model_t *model,
             }
         }
         return ESP_OK;
+    }
+    case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_INFO_GET: {
+        if (user_data == NULL) {
+            ESP_LOGE(TAG, "Invalid Device UUID for FP Node Info Get");
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        /* Top device (e.g. phone) tries to get node information */
+        msg = bt_mesh_alloc_buf(34); /* UUID + element count + Device Key */
+        if (!msg) {
+            ESP_LOGE(TAG, "%s: Failed to allocate memory", __func__);
+            return ESP_FAIL;
+        }
+
+        net_buf_simple_add_le16(msg, esp_ble_mesh_get_element_count());
+        net_buf_simple_add_mem(msg, (const uint8_t *)user_data, 16);
+        net_buf_simple_add_mem(msg, esp_ble_mesh_get_device_key(), 16);
+
+        opcode = ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_INFO_STATUS;
+        break;
     }
     default:
         ESP_LOGW(TAG, "%s: Not a Fast Prov Client message opcode", __func__);

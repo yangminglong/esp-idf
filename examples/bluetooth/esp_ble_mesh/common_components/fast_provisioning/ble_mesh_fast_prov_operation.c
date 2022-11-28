@@ -554,6 +554,31 @@ esp_err_t example_send_fast_prov_all_node_addr_get(esp_ble_mesh_model_t *model,
             0, NULL, info->timeout, true, info->role);
 }
 
+esp_err_t example_send_fast_prov_node_info_get(esp_ble_mesh_model_t *model,
+                                               example_msg_common_info_t *info)
+{
+    if (!model || !info) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!ESP_BLE_MESH_ADDR_IS_UNICAST(info->dst)) {
+        ESP_LOGE(TAG, "Fast Prov Node Info Get can only sent to unicast address");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_ble_mesh_msg_ctx_t ctx = {
+        .net_idx  = info->net_idx,
+        .app_idx  = info->app_idx,
+        .addr     = info->dst,
+        .send_rel = false,
+        .send_ttl = 0,
+    };
+
+    return esp_ble_mesh_client_model_send_msg(model, &ctx,
+            ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_INFO_GET,
+            0, NULL, info->timeout, true, info->role);
+}
+
 esp_err_t example_send_fast_prov_status_msg(esp_ble_mesh_model_t *model,
         esp_ble_mesh_msg_ctx_t *ctx,
         uint32_t opcode, struct net_buf_simple *msg)
@@ -567,6 +592,7 @@ esp_err_t example_send_fast_prov_status_msg(esp_ble_mesh_model_t *model,
     case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NET_KEY_STATUS:
     case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_ACK:
     case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_STATUS:
+	case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_INFO_STATUS:
         ctx->send_ttl = 0;
         ctx->send_rel = false;
         break;

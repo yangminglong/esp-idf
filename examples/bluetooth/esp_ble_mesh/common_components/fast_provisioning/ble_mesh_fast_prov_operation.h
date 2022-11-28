@@ -62,6 +62,9 @@ esp_err_t example_send_fast_prov_self_prov_node_addr(esp_ble_mesh_model_t *model
 esp_err_t example_send_fast_prov_all_node_addr_get(esp_ble_mesh_model_t *model,
         example_msg_common_info_t *info);
 
+esp_err_t example_send_fast_prov_node_info_get(esp_ble_mesh_model_t *model,
+                                               example_msg_common_info_t *info);
+
 esp_err_t example_send_fast_prov_status_msg(esp_ble_mesh_model_t *model,
         esp_ble_mesh_msg_ctx_t *ctx,
         uint32_t opcode, struct net_buf_simple *msg);

@@ -87,7 +87,9 @@ typedef struct {
 esp_err_t example_store_remote_node_address(uint16_t node_addr);
 
 esp_err_t example_fast_prov_server_recv_msg(esp_ble_mesh_model_t *model,
-        esp_ble_mesh_msg_ctx_t *ctx, struct net_buf_simple *buf);
+                                            esp_ble_mesh_msg_ctx_t *ctx,
+                                            struct net_buf_simple *buf,
+                                            void *user_data);
 
 esp_err_t example_handle_fast_prov_info_set_comp_evt(esp_ble_mesh_model_t *model, uint8_t status_unicast,
         uint8_t status_net_idx, uint8_t status_match);
