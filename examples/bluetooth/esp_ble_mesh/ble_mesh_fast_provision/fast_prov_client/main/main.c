@@ -44,6 +44,7 @@ static const esp_ble_mesh_client_op_pair_t fast_prov_cli_op_pair[] = {
     { ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_SET,      ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_STATUS      },
     { ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NET_KEY_ADD,   ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NET_KEY_STATUS   },
     { ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_GET, ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_STATUS },
+    { ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_INFO_GET, ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_INFO_STATUS },
 };
 
 static esp_ble_mesh_cfg_srv_t config_server = {
@@ -75,6 +76,7 @@ static esp_ble_mesh_model_op_t fast_prov_cli_op[] = {
     ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_STATUS,      1),
     ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NET_KEY_STATUS,   2),
     ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_STATUS, 2),
+    ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_INFO_STATUS, 34),
     ESP_BLE_MESH_MODEL_OP_END,
 };
 
@@ -307,6 +309,11 @@ static void example_provisioning_callback(esp_ble_mesh_prov_cb_event_t event,
     case ESP_BLE_MESH_PROVISIONER_BIND_APP_KEY_TO_MODEL_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_BIND_APP_KEY_TO_MODEL_COMP_EVT, err_code %d", param->provisioner_bind_app_key_to_model_comp.err_code);
         break;
+    case ESP_BLE_MESH_PROVISIONER_STORE_FAST_PROV_NODE_INFO_COMP_EVT:
+        ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_STORE_FAST_PROV_NODE_INFO_COMP_EVT, err_code %d, node 0x%04x",
+                param->provisioner_store_fast_prov_node_info_comp.err_code,
+                param->provisioner_store_fast_prov_node_info_comp.unicast_addr);
+        break;
     default:
         break;
     }
@@ -330,7 +337,8 @@ static void example_custom_model_callback(esp_ble_mesh_model_cb_event_t event,
         switch (opcode) {
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_STATUS:
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NET_KEY_STATUS:
-        case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_STATUS: {
+        case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_STATUS:
+        case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_INFO_STATUS: {
             ESP_LOGI(TAG, "%s: Fast Prov Client Model receives status, opcode 0x%04x", __func__, opcode);
             err = example_fast_prov_client_recv_status(param->model_operation.model,
                     param->model_operation.ctx,

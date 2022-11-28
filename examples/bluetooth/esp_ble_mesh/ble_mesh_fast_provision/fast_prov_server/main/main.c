@@ -111,6 +111,7 @@ static esp_ble_mesh_model_op_t fast_prov_srv_op[] = {
     ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_GET,     0),
     ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_GROUP_ADD,    2),
     ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_GROUP_DELETE, 2),
+    ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_INFO_GET,     0),
     ESP_BLE_MESH_MODEL_OP_END,
 };
 
@@ -439,14 +440,16 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR:
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_GET:
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_GROUP_ADD:
-        case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_GROUP_DELETE: {
+        case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_GROUP_DELETE:
+        case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_INFO_GET: {
             ESP_LOGI(TAG, "%s: Fast prov server receives msg, opcode 0x%04x", __func__, opcode);
             struct net_buf_simple buf = {
                 .len = param->model_operation.length,
                 .data = param->model_operation.msg,
             };
             err = example_fast_prov_server_recv_msg(param->model_operation.model,
-                                                    param->model_operation.ctx, &buf);
+                                                    param->model_operation.ctx, &buf,
+                                                    dev_uuid);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "%s: Failed to handle fast prov client message", __func__);
                 return;
