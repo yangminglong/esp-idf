@@ -458,7 +458,8 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
                 .data = param->model_operation.msg,
             };
             err = example_fast_prov_server_recv_msg(param->model_operation.model,
-                                                    param->model_operation.ctx, &buf);
+                                                    param->model_operation.ctx, &buf,
+                                                    dev_uuid);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "%s: Failed to handle fast prov client message", __func__);
                 return;
