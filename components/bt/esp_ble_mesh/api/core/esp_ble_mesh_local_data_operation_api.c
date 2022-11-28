@@ -47,6 +47,11 @@ uint8_t esp_ble_mesh_get_element_count(void)
     return btc_ble_mesh_elem_count();
 }
 
+const uint8_t *esp_ble_mesh_get_device_key(void)
+{
+    return btc_ble_mesh_get_device_key();
+}
+
 esp_ble_mesh_model_t *esp_ble_mesh_find_vendor_model(const esp_ble_mesh_elem_t *element,
                                                      uint16_t company_id, uint16_t model_id)
 {

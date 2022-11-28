@@ -406,6 +406,23 @@ esp_err_t esp_ble_mesh_provisioner_update_local_net_key(const uint8_t net_key[16
 const uint8_t *esp_ble_mesh_provisioner_get_local_net_key(uint16_t net_idx);
 
 /**
+ * @brief         This function is called by Provisioner(Fast Provisioning Client) to
+ *                store the information of a node.
+ *
+ * @param[in]     unicast_addr: Unicast address.
+ * @param[in]     element_num:  Element number.
+ * @param[in]     uuid:         Device UUID.
+ * @param[in]     dev_key:      Device Key.
+ *
+ * @return        Application key on success, or NULL on failure.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_store_fast_prov_node_info(uint16_t unicast_addr,
+                                                             uint8_t element_num,
+                                                             const uint8_t uuid[16],
+                                                             const uint8_t dev_key[16]);
+
+/**
  * @brief         This function is called by Provisioner to enable or disable receiving
  *                heartbeat messages.
  *

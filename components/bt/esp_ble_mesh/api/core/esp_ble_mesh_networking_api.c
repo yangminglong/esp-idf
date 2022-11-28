@@ -521,6 +521,37 @@ const uint8_t *esp_ble_mesh_provisioner_get_local_net_key(uint16_t net_idx)
     return bt_mesh_provisioner_local_net_key_get(net_idx);
 }
 
+esp_err_t esp_ble_mesh_provisioner_store_fast_prov_node_info(uint16_t unicast_addr,
+                                                             uint8_t element_num,
+                                                             const uint8_t uuid[16],
+                                                             const uint8_t dev_key[16])
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (!ESP_BLE_MESH_ADDR_IS_UNICAST(unicast_addr) || element_num == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_STORE_FAST_PROV_NODE_INFO;
+
+    arg.store_fast_prov_node_info.unicast_addr = unicast_addr;
+    arg.store_fast_prov_node_info.element_num = element_num;
+    if (uuid) {
+        memcpy(arg.store_fast_prov_node_info.uuid, uuid, 16);
+    }
+    if (dev_key) {
+        memcpy(arg.store_fast_prov_node_info.dev_key, dev_key, 16);
+    }
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 #if CONFIG_BLE_MESH_PROVISIONER_RECV_HB
 esp_err_t esp_ble_mesh_provisioner_recv_heartbeat(bool enable)
 {

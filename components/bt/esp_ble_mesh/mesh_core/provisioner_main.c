@@ -255,16 +255,19 @@ uint16_t bt_mesh_provisioner_get_node_count(void)
 
 static int provisioner_store_node(struct bt_mesh_node *node, bool store, uint16_t *index)
 {
+	u8_t zero[16] = {0};
     int i;
 
     bt_mesh_provisioner_lock();
 
-    /* Check if the node already exists */
-    for (i = 0; i < ARRAY_SIZE(mesh_nodes); i++) {
-        if (mesh_nodes[i] && !memcmp(mesh_nodes[i]->dev_uuid, node->dev_uuid, 16)) {
-            BT_WARN("Node already exists, uuid %s", bt_hex(node->dev_uuid, 16));
-            bt_mesh_provisioner_unlock();
-            return -EEXIST;
+    if (memcmp(node->dev_uuid, zero, 16)) {
+        /* Check if the node already exists when the device uuid is non-zero */
+        for (i = 0; i < ARRAY_SIZE(mesh_nodes); i++) {
+            if (mesh_nodes[i] && !memcmp(mesh_nodes[i]->dev_uuid, node->dev_uuid, 16)) {
+                BT_WARN("Node already exists, uuid %s", bt_hex(node->dev_uuid, 16));
+                bt_mesh_provisioner_unlock();
+                return -EEXIST;
+            }
         }
     }
 
@@ -1455,6 +1458,57 @@ int bt_mesh_provisioner_bind_local_model_app_idx(uint16_t elem_addr, uint16_t mo
 
     BT_ERR("Model bound is full!");
     return -ENOMEM;
+}
+ 
+int bt_mesh_provisioner_store_fast_prov_node_info(uint16_t unicast_addr,
+                                                  uint8_t element_num,
+                                                  const uint8_t uuid[16],
+                                                  const uint8_t dev_key[16])
+{
+    struct bt_mesh_node *node = NULL;
+    struct bt_mesh_node store = {0};
+
+    if (!BLE_MESH_ADDR_IS_UNICAST(unicast_addr) || element_num == 0) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    BT_INFO("Unicast address 0x%04x, element number %d", unicast_addr, element_num);
+    if (uuid) {
+        BT_INFO("Device UUID %s", bt_hex(uuid, 16));
+    }
+    if (dev_key) {
+        BT_INFO("Device Key %s", bt_hex(dev_key, 16));
+    }
+
+    node = provisioner_find_node_with_addr(unicast_addr, NULL);
+    if (node) {
+        BT_INFO("FP node 0x%04x exists", unicast_addr);
+        bt_mesh_provisioner_lock();
+        node->element_num = element_num;
+        if (uuid) {
+            memcpy(node->dev_uuid, uuid, 16);
+        }
+        if (dev_key) {
+            memcpy(node->dev_key, dev_key, 16);
+        }
+        if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+            bt_mesh_store_node_info(node);
+        }
+        bt_mesh_provisioner_unlock();
+        return 0;
+    }
+
+    store.unicast_addr = unicast_addr;
+    store.element_num = element_num;
+    if (uuid) {
+        memcpy(store.dev_uuid, uuid, 16);
+    }
+    if (dev_key) {
+        memcpy(store.dev_key, dev_key, 16);
+    }
+
+    return provisioner_store_node(&store, true, NULL);
 }
 
 int bt_mesh_print_local_composition_data(void)

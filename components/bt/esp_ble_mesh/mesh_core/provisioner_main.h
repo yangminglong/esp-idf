@@ -119,6 +119,11 @@ int bt_mesh_provisioner_local_net_key_del(uint16_t net_idx, bool store);
 int bt_mesh_provisioner_bind_local_model_app_idx(uint16_t elem_addr, uint16_t mod_id,
                                                  uint16_t cid, uint16_t app_idx);
 
+int bt_mesh_provisioner_store_fast_prov_node_info(uint16_t unicast_addr,
+                                                  uint8_t element_num,
+                                                  const uint8_t uuid[16],
+                                                  const uint8_t dev_key[16]);
+
 typedef void (* bt_mesh_heartbeat_recv_cb_t)(uint16_t hb_src, uint16_t hb_dst,
                                              uint8_t init_ttl, uint8_t rx_ttl,
                                              uint8_t hops, uint16_t feat, int8_t rssi);

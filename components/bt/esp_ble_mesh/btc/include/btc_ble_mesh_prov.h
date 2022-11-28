@@ -55,6 +55,7 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA,
     BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_UUID,
     BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_ADDR,
+    BTC_BLE_MESH_ACT_PROVISIONER_STORE_FAST_PROV_NODE_INFO,
     BTC_BLE_MESH_ACT_PROVISIONER_ENABLE_HEARTBEAT_RECV,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_INFO,
@@ -218,6 +219,12 @@ typedef union {
         uint16_t unicast_addr;
     } delete_node_with_addr;
     struct {
+        uint16_t unicast_addr;
+        uint8_t  uuid[16];
+        uint8_t  element_num;
+        uint8_t  dev_key[16];
+    } store_fast_prov_node_info;
+    struct {
         bool enable;
     } enable_heartbeat_recv;
     struct {
@@ -365,6 +372,8 @@ uint16_t *btc_ble_mesh_model_find_group(esp_ble_mesh_model_t *mod, uint16_t addr
 esp_ble_mesh_elem_t *btc_ble_mesh_elem_find(uint16_t addr);
 
 uint8_t btc_ble_mesh_elem_count(void);
+
+const uint8_t *btc_ble_mesh_get_device_key(void);
 
 esp_ble_mesh_model_t *btc_ble_mesh_model_find_vnd(const esp_ble_mesh_elem_t *elem,
                                                   uint16_t company, uint16_t id);

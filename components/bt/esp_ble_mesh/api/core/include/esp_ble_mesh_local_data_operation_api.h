@@ -69,6 +69,14 @@ esp_ble_mesh_elem_t *esp_ble_mesh_find_element(uint16_t element_addr);
 uint8_t esp_ble_mesh_get_element_count(void);
 
 /**
+ * @brief         Get the Device Key of the node.
+ *
+ * @return        Device Key.
+ *
+ */
+const uint8_t *esp_ble_mesh_get_device_key(void);
+
+/**
  * @brief        Find the Vendor specific model with the given element,
  *               the company ID and the Vendor Model ID.
  *

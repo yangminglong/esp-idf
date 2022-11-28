@@ -847,6 +847,7 @@ typedef enum {
     ESP_BLE_MESH_PROVISIONER_STORE_NODE_COMP_DATA_COMP_EVT,     /*!< Provisioner store node composition data completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_UUID_COMP_EVT,    /*!< Provisioner delete node with uuid completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT,    /*!< Provisioner delete node with unicast address completion event */
+    ESP_BLE_MESH_PROVISIONER_STORE_FAST_PROV_NODE_INFO_COMP_EVT,    /*!< Provisioner store fast provisioning node information (e.g. unicast address, uuid, Device Key, etc.) completion event */
     ESP_BLE_MESH_PROVISIONER_ENABLE_HEARTBEAT_RECV_COMP_EVT,     /*!< Provisioner start to receive heartbeat message completion event */
     ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT, /*!< Provisioner set the heartbeat filter type completion event */
     ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT, /*!< Provisioner set the heartbeat filter information completion event */
@@ -1226,6 +1227,13 @@ typedef union {
         uint16_t unicast_addr;                  /*!< Node unicast address */
     } provisioner_delete_node_with_addr_comp;   /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT */
     /**
+     * @brief ESP_BLE_MESH_PROVISIONER_STORE_FAST_PROV_NODE_INFO_COMP_EVT
+     */
+    struct {
+        int err_code;                                   /*!< Indicate the result of deleting settings with user id by the Provisioner */
+        uint16_t unicast_addr;                          /*!< Unicast address of the node */
+    } provisioner_store_fast_prov_node_info_comp;       /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_STORE_FAST_PROV_NODE_INFO_COMP_EVT */
+	/**
      * @brief ESP_BLE_MESH_PROVISIONER_ENABLE_HEARTBEAT_RECV_COMP_EVT
      */
     struct {

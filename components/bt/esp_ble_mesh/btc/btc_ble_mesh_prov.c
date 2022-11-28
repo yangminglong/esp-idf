@@ -1085,6 +1085,11 @@ uint8_t btc_ble_mesh_elem_count(void)
     return bt_mesh_elem_count();
 }
 
+const uint8_t *btc_ble_mesh_get_device_key(void)
+{
+    return bt_mesh.dev_key;
+}
+
 esp_ble_mesh_model_t *btc_ble_mesh_model_find_vnd(const esp_ble_mesh_elem_t *elem,
                                                   uint16_t company, uint16_t id)
 {
@@ -2068,6 +2073,26 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         param.provisioner_delete_node_with_addr_comp.err_code =
             bt_mesh_provisioner_delete_node_with_node_addr(arg->delete_node_with_addr.unicast_addr);
         break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_STORE_FAST_PROV_NODE_INFO: {
+        const uint8_t *dev_key = NULL;
+        const uint8_t *uuid = NULL;
+        uint8_t zero[16] = {0};
+
+        act = ESP_BLE_MESH_PROVISIONER_STORE_FAST_PROV_NODE_INFO_COMP_EVT;
+        param.provisioner_store_fast_prov_node_info_comp.unicast_addr = arg->store_fast_prov_node_info.unicast_addr;
+
+        if (memcmp(arg->store_fast_prov_node_info.uuid, zero, sizeof(zero))) {
+            uuid = arg->store_fast_prov_node_info.uuid;
+        }
+        if (memcmp(arg->store_fast_prov_node_info.dev_key, zero, sizeof(zero))) {
+            dev_key = arg->store_fast_prov_node_info.dev_key;
+        }
+        param.provisioner_store_fast_prov_node_info_comp.err_code =
+            bt_mesh_provisioner_store_fast_prov_node_info(arg->store_fast_prov_node_info.unicast_addr,
+                                                          arg->store_fast_prov_node_info.element_num,
+                                                          uuid, dev_key);
+        break;
+    }
 #if CONFIG_BLE_MESH_PROVISIONER_RECV_HB
     case BTC_BLE_MESH_ACT_PROVISIONER_ENABLE_HEARTBEAT_RECV:
         act = ESP_BLE_MESH_PROVISIONER_ENABLE_HEARTBEAT_RECV_COMP_EVT;
