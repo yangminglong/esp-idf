@@ -255,7 +255,7 @@ uint16_t bt_mesh_provisioner_get_node_count(void)
 
 static int provisioner_store_node(struct bt_mesh_node *node, bool store, uint16_t *index)
 {
-	u8_t zero[16] = {0};
+	uint8_t zero[16] = {0};
     int i;
 
     bt_mesh_provisioner_lock();
