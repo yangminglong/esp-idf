@@ -319,7 +319,6 @@ void get_node_net_info(uint16_t node_addr)
 {
     esp_ble_mesh_model_t *model = NULL;
     example_node_info_t *node = NULL;
-    esp_err_t err;
 
     model = example_find_model(esp_ble_mesh_get_primary_element_address(),
                                ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_CLI, CID_ESP);
@@ -342,12 +341,13 @@ void get_node_net_info(uint16_t node_addr)
         .role = ROLE_PROVISIONER,
     };
 
-    example_send_fast_prov_node_info_get(model, info);
+    example_send_fast_prov_node_info_get(model, &info);
 }
 
 // 向非自配置节点地址发送获取节点内容的消息
 void rqNodeInfo(const uint8_t *data, uint16_t length)
 {
+    esp_err_t err;
     g_count_of_wait_t_prov += length / 2;
     for (int i = 0; i < length; i = i + 2)
     {
@@ -357,25 +357,13 @@ void rqNodeInfo(const uint8_t *data, uint16_t length)
         if (ESP_BLE_MESH_ADDR_IS_UNICAST(node_addr))
         {
             ESP_LOGI(TAG, "The stored address is :%04x", node_addr);
-            err = store_node_info(NULL, node_addr, 1, 0xFFFF, 0xFFFF);
-            if (err != ESP_OK)
-            {
-                ESP_LOGE(TAG, "Error: Cannot store address :%04x %s:%d", node_addr, __func__, __LINE__);
-                return ESP_FAIL;
-            }  
+
             err = esp_ble_mesh_provisioner_store_fast_prov_node_info(node_addr, 1, NULL, NULL);
             if (err != ESP_OK)
             {
                 ESP_LOGE(TAG, "Error: Cannot store address :%04x %s:%d", node_addr, __func__, __LINE__);
                 return ESP_FAIL;
-            } 
-            example_node_info_t *node  = get_node_info(node_addr);
-            if (!node)
-            {
-                ESP_LOGE(TAG, "Error: Cannot find address :%04x %s:%d", node_addr, __func__, __LINE__);
-                return ESP_FAIL; 
-            }
-        
+            }         
             get_node_net_info(node_addr); // -------------> Here i send the message to get Dev Key and UUID
         }        
     }
@@ -489,15 +477,28 @@ esp_err_t example_fast_prov_client_recv_status(esp_ble_mesh_model_t *model,
         ESP_LOGI(TAG, "Get FP node 0x%04x information, elem_num %d", ctx->addr, elem_num);
         ESP_LOG_BUFFER_HEX("Device UUID", uuid, 16);
         ESP_LOG_BUFFER_HEX("Device Key", dev_key, 16);
-
+        //bt_mesh_provisioner_store_fast_prov_node_info
         err = esp_ble_mesh_provisioner_store_fast_prov_node_info(ctx->addr, elem_num, uuid, dev_key);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to store FP node information");
             return ESP_FAIL;
         }
+        // 保存节点信息到本地数据结构
+        err = example_store_node_info(uuid, ctx->addr, elem_num, ctx->net_idx, ctx->app_idx, false);
+        if (err != ESP_OK)
+        {
+            ESP_LOGE(TAG, "Error: Cannot store address :%04x %s:%d", ctx->addr, __func__, __LINE__);
+            return ESP_FAIL;
+        }  
+        example_node_info_t *node  = example_get_node_info(ctx->addr);
+        if (!node)
+        {
+            ESP_LOGE(TAG, "Error: Cannot find address :%04x %s:%d", ctx->addr, __func__, __LINE__);
+            return ESP_FAIL; 
+        }
 
+        // 获取到所有非自配网节点的内容后，广播开关消息，使成为节点
         g_count_of_wait_t_prov--;
-
         if (g_count_of_wait_t_prov == 0) {
             onProvFinished();
         }
