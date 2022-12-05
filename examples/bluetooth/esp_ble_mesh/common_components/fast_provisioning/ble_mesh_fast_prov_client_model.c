@@ -311,6 +311,108 @@ esp_err_t example_fast_prov_client_recv_timeout(uint32_t opcode, esp_ble_mesh_mo
     return ESP_OK;
 }
 
+uint16_t g_count_of_wait_t_prov = 0;
+uint16_t g_count_of_t_proved = 0;
+
+// 发送获取节点内容的消息
+void get_node_net_info(uint16_t node_addr)
+{
+    esp_ble_mesh_model_t *model = NULL;
+    example_node_info_t *node = NULL;
+    esp_err_t err;
+
+    model = example_find_model(esp_ble_mesh_get_primary_element_address(),
+                               ESP_BLE_MESH_VND_MODEL_ID_FAST_PROV_CLI, CID_ESP);
+    if (!model) {
+        ESP_LOGE(TAG, "%s: Failed to get model info", __func__);
+        return;
+    }
+    
+    node = example_get_node_info(prim_prov_addr);
+    if (!node) {
+        ESP_LOGE(TAG, "%s: Failed to get node info", __func__);
+        return;
+    }
+
+    example_msg_common_info_t info = {
+        .net_idx = node->net_idx,
+        .app_idx = node->app_idx,
+        .dst = node_addr,
+        .timeout = 10000,
+        .role = ROLE_PROVISIONER,
+    };
+
+    example_send_fast_prov_node_info_get(model, info);
+}
+
+// 向非自配置节点地址发送获取节点内容的消息
+void rqNodeInfo(const uint8_t *data, uint16_t length)
+{
+    g_count_of_wait_t_prov += length / 2;
+    for (int i = 0; i < length; i = i + 2)
+    {
+        uint16_t node_addr = 0;
+        memcpy(&node_addr, data, 2);
+        data = data + 2;
+        if (ESP_BLE_MESH_ADDR_IS_UNICAST(node_addr))
+        {
+            ESP_LOGI(TAG, "The stored address is :%04x", node_addr);
+            err = store_node_info(NULL, node_addr, 1, 0xFFFF, 0xFFFF);
+            if (err != ESP_OK)
+            {
+                ESP_LOGE(TAG, "Error: Cannot store address :%04x %s:%d", node_addr, __func__, __LINE__);
+                return ESP_FAIL;
+            }  
+            err = esp_ble_mesh_provisioner_store_fast_prov_node_info(node_addr, 1, NULL, NULL);
+            if (err != ESP_OK)
+            {
+                ESP_LOGE(TAG, "Error: Cannot store address :%04x %s:%d", node_addr, __func__, __LINE__);
+                return ESP_FAIL;
+            } 
+            example_node_info_t *node  = get_node_info(node_addr);
+            if (!node)
+            {
+                ESP_LOGE(TAG, "Error: Cannot find address :%04x %s:%d", node_addr, __func__, __LINE__);
+                return ESP_FAIL; 
+            }
+        
+            get_node_net_info(node_addr); // -------------> Here i send the message to get Dev Key and UUID
+        }        
+    }
+}
+
+void onProvFinished()
+{
+#if CONFIG_BLE_MESH_GENERIC_ONOFF_CLI
+        esp_ble_mesh_model_t *cli_model = NULL;
+        example_node_info_t *node = NULL;
+        esp_err_t err;
+        node = example_get_node_info(prim_prov_addr);
+        if (!node) {
+            ESP_LOGE(TAG, "%s: Failed to get node info", __func__);
+            return ESP_FAIL;
+        }
+        cli_model = example_find_model(esp_ble_mesh_get_primary_element_address(),
+                                       ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, ESP_BLE_MESH_CID_NVAL);
+        if (!cli_model) {
+            ESP_LOGE(TAG, "%s: Failed to get Generic OnOff Client Model info", __func__);
+            return ESP_FAIL;
+        }
+        example_msg_common_info_t info = {
+            .net_idx = node->net_idx,
+            .app_idx = node->app_idx,
+            .dst = node->group_addr,
+            .timeout = 0,
+            .role = ROLE_PROVISIONER,
+        };
+        err = example_send_generic_onoff_set(cli_model, &info, LED_ON, 0x00, false);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "%s: Failed to send Generic OnOff Set Unack message", __func__);
+            return ESP_FAIL;
+        }
+#endif /* CONFIG_BLE_MESH_GENERIC_ONOFF_CLI */
+}
+
 esp_err_t example_fast_prov_client_recv_status(esp_ble_mesh_model_t *model,
         esp_ble_mesh_msg_ctx_t *ctx,
         uint16_t len, const uint8_t *data)
@@ -373,34 +475,9 @@ esp_err_t example_fast_prov_client_recv_status(esp_ble_mesh_model_t *model,
     }
     case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR_STATUS: {
         ESP_LOG_BUFFER_HEX("Node address", data, len);
-#if CONFIG_BLE_MESH_GENERIC_ONOFF_CLI
-        esp_ble_mesh_model_t *cli_model = NULL;
-        example_node_info_t *node = NULL;
-        esp_err_t err;
-        node = example_get_node_info(prim_prov_addr);
-        if (!node) {
-            ESP_LOGE(TAG, "%s: Failed to get node info", __func__);
-            return ESP_FAIL;
-        }
-        cli_model = example_find_model(esp_ble_mesh_get_primary_element_address(),
-                                       ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, ESP_BLE_MESH_CID_NVAL);
-        if (!cli_model) {
-            ESP_LOGE(TAG, "%s: Failed to get Generic OnOff Client Model info", __func__);
-            return ESP_FAIL;
-        }
-        example_msg_common_info_t info = {
-            .net_idx = node->net_idx,
-            .app_idx = node->app_idx,
-            .dst = node->group_addr,
-            .timeout = 0,
-            .role = ROLE_PROVISIONER,
-        };
-        err = example_send_generic_onoff_set(cli_model, &info, LED_ON, 0x00, false);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "%s: Failed to send Generic OnOff Set Unack message", __func__);
-            return ESP_FAIL;
-        }
-#endif /* CONFIG_BLE_MESH_GENERIC_ONOFF_CLI */
+
+        rqNodeInfo(data, len);
+
         break;
     }
     case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_INFO_STATUS: {
@@ -418,6 +495,13 @@ esp_err_t example_fast_prov_client_recv_status(esp_ble_mesh_model_t *model,
             ESP_LOGE(TAG, "Failed to store FP node information");
             return ESP_FAIL;
         }
+
+        g_count_of_wait_t_prov--;
+
+        if (g_count_of_wait_t_prov == 0) {
+            onProvFinished();
+        }
+
         break;
     }
     default:
